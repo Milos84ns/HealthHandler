@@ -6,8 +6,6 @@ pub mod health_dependency;
 mod tests {
     use crate::health::{AppState,Health};
     use crate::health_dependency::HealthDependency;
-
-    use super::*;
     use ::axum::routing::get;
     use ::axum::Router;
     use ::axum_test::TestServer;

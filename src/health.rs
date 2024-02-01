@@ -1,8 +1,6 @@
 use serde::{Deserialize,Serialize};
 use std::time::{SystemTime,UNIX_EPOCH};
-use sysinfo::{
-    Components, Disks, Networks, System,
-};
+use sysinfo::System;
 use crate::health_dependency::HealthDependency;
 
 
@@ -11,8 +9,11 @@ pub struct Health {
     pub component: String,
     pub component_description:String,
     pub version:String,
+    #[serde(rename = "timeStamp")]
     pub time_stamp:u64,
+    #[serde(rename = "isAvailable")]
     pub(crate) is_available:bool,
+    #[serde(rename = "appState")]
     app_state:AppState,
     pub stats:Stats,
     pub dependencies: Vec<HealthDependency>,

@@ -3,9 +3,12 @@ use serde::{Deserialize,Serialize};
 pub struct HealthDependency {
       pub component:String,
       pub url:String,
+      #[serde(rename = " isAvailable")]
       pub is_available:bool,
       pub description:String,
+      #[serde(rename = "availabilityMessage")]
       pub availability_message:String,
+      #[serde(rename = "authType")]
       pub auth_type:String,
 }
 
