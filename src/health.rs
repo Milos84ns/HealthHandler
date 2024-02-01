@@ -35,10 +35,6 @@ impl HealthService {
         }
     }
 
-    pub fn set_state(&mut self,new_state:AppState){
-         self.health.set_state(new_state);
-    }
-
     pub fn get_health(&self) -> Health {
         Health {
             is_available: self.health.clone().compute_availability(),
@@ -46,7 +42,7 @@ impl HealthService {
             component_description:self.health.component_description.to_owned(),
             version:self.health.version.to_owned(),
             service_started:self.health.service_started.to_owned(),
-            app_state:self.health.app_state.to_owned(),
+            app_state:AppState::Running,
             stats:get_stats(),
             dependencies:self.health.dependencies.to_owned(),
         }
@@ -64,6 +60,8 @@ impl HealthService {
             },
         );
     }
+
+
 }
 
 impl Health {
