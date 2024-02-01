@@ -35,15 +35,28 @@ impl HealthService {
         }
     }
 
+    pub fn get_health(&self) -> Health {
+        Health {
+            is_available: self.health.clone().compute_availability(),
+            component:self.health.component.to_owned(),
+            component_description:self.health.component_description.to_owned(),
+            version:self.health.version.to_owned(),
+            service_started:self.health.service_started.to_owned(),
+            app_state:self.health.app_state.to_owned(),
+            stats:get_stats(),
+            dependencies:self.health.dependencies.to_owned(),
+        }
+    }
+
     pub fn start(&'static self) {
         self.executor.schedule_fixed_rate(
             Duration::from_secs(10),  // Wait 2 seconds before scheduling the first task
             Duration::from_secs(15),  // and schedule every following task at 5 seconds intervals
-            |remote| {
+            |_remote| {
                 // Code to be scheduled. The code will run on one of the threads in the thread pool.
                 // The `remote` handle can be used to schedule additional work on the event loop,
                 // if needed.
-                self.health.get_health();
+                self.get_health();
             },
         );
     }
@@ -103,18 +116,18 @@ impl Health {
         self.app_state = new_state;
     }
 
-    pub fn get_health(&self) -> Health {
-        Health {
-            is_available: self.clone().compute_availability(),
-            component:self.component.to_owned(),
-            component_description:self.component_description.to_owned(),
-            version:self.version.to_owned(),
-            service_started:self.service_started.to_owned(),
-            app_state:self.app_state.to_owned(),
-            stats:self.stats.to_owned(),
-            dependencies:self.dependencies.to_owned(),
-        }
-    }
+    // pub fn get_health(&self) -> Health {
+    //     Health {
+    //         is_available: self.clone().compute_availability(),
+    //         component:self.component.to_owned(),
+    //         component_description:self.component_description.to_owned(),
+    //         version:self.version.to_owned(),
+    //         service_started:self.service_started.to_owned(),
+    //         app_state:self.app_state.to_owned(),
+    //         stats:self.stats.to_owned(),
+    //         dependencies:self.dependencies.to_owned(),
+    //     }
+    // }
 }
 
 #[derive(Debug,Serialize,Deserialize,Clone)]
