@@ -1,7 +1,8 @@
 use serde::{Deserialize,Serialize};
-use std::time::{SystemTime,UNIX_EPOCH};
+use std::time::{Duration, SystemTime, UNIX_EPOCH};
 use sysinfo::System;
 use crate::health_dependency::HealthDependency;
+use scheduled_executor::ThreadPoolExecutor;
 
 
 #[derive(Debug,Serialize,Deserialize,Clone)]
@@ -9,14 +10,43 @@ pub struct Health {
     pub component: String,
     pub component_description:String,
     pub version:String,
-    #[serde(rename = "timeStamp")]
-    pub time_stamp:u64,
+    #[serde(rename = "serviceStarted")]
+    pub service_started:u64,
     #[serde(rename = "isAvailable")]
     pub(crate) is_available:bool,
     #[serde(rename = "appState")]
     app_state:AppState,
     pub stats:Stats,
+
     pub dependencies: Vec<HealthDependency>,
+}
+
+#[derive(Clone)]
+pub struct HealthService {
+    health: Health,
+    executor: ThreadPoolExecutor,
+}
+
+impl HealthService {
+    pub fn new(comp:String,desc:String,ver:String,app_s: AppState) -> Self {
+        HealthService {
+            health:Health::new(comp,desc,ver,app_s),
+            executor: ThreadPoolExecutor::new(1).unwrap(),
+        }
+    }
+
+    pub fn start(&'static self) {
+        self.executor.schedule_fixed_rate(
+            Duration::from_secs(10),  // Wait 2 seconds before scheduling the first task
+            Duration::from_secs(15),  // and schedule every following task at 5 seconds intervals
+            |remote| {
+                // Code to be scheduled. The code will run on one of the threads in the thread pool.
+                // The `remote` handle can be used to schedule additional work on the event loop,
+                // if needed.
+                self.health.get_health();
+            },
+        );
+    }
 }
 
 impl Health {
@@ -31,7 +61,7 @@ impl Health {
             version:ver,
             is_available:false,
             app_state:app_s,
-            time_stamp: current_timestamp(),
+            service_started: current_timestamp(),
             dependencies:vec![],
             stats:get_stats(),
         }
@@ -62,6 +92,13 @@ impl Health {
         self.basic_health();
     }
 
+    fn has_updated_recently(&self, timestamp: u64) -> bool {
+        let now = current_timestamp();
+        let elapsed_since_timestamp = now - timestamp;
+        let service_elapsed = now - self.service_started;
+        elapsed_since_timestamp < 5 * 60 || service_elapsed < 5 * 60
+    }
+
     pub fn set_state(&mut self,new_state:AppState) {
         self.app_state = new_state;
     }
@@ -72,7 +109,7 @@ impl Health {
             component:self.component.to_owned(),
             component_description:self.component_description.to_owned(),
             version:self.version.to_owned(),
-            time_stamp:self.time_stamp.to_owned(),
+            service_started:self.service_started.to_owned(),
             app_state:self.app_state.to_owned(),
             stats:self.stats.to_owned(),
             dependencies:self.dependencies.to_owned(),
@@ -95,7 +132,9 @@ pub struct Stats{
     #[serde(rename = "memoryUsedMB")]
     used_mem:u64,
     #[serde(rename = "cpuUsed")]
-    used_cpu:f32
+    used_cpu:f32,
+    #[serde(rename = "servicePid")]
+    pub pid:u32,
 }
 
 pub fn get_stats() -> Stats {
@@ -105,6 +144,7 @@ pub fn get_stats() -> Stats {
     Stats {
         used_mem: sys.process(sysinfo::get_current_pid().unwrap()).unwrap().memory()/1048576,
         used_cpu: sys.process(sysinfo::get_current_pid().unwrap()).unwrap().cpu_usage(),
+        pid: sysinfo::get_current_pid().unwrap().as_u32(),
     }
 
 }
@@ -115,3 +155,5 @@ pub fn current_timestamp() -> u64{
         .expect("Time went backwards")
         .as_secs()
 }
+
+
