@@ -42,8 +42,6 @@ mod tests {
         assert_eq!(health_response.component,env!("CARGO_PKG_NAME").to_string());
         assert_eq!(health_response.is_available, false);
     }
-
-
     fn health_handle(health: Health) -> String {
         return serde_json::to_string(&health).unwrap();
     }

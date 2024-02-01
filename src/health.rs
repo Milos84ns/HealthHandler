@@ -15,7 +15,7 @@ pub struct Health {
     #[serde(rename = "isAvailable")]
     pub(crate) is_available:bool,
     #[serde(rename = "appState")]
-    app_state:AppState,
+    pub app_state:AppState,
     pub stats:Stats,
 
     pub dependencies: Vec<HealthDependency>,
@@ -23,7 +23,7 @@ pub struct Health {
 
 #[derive(Clone)]
 pub struct HealthService {
-    health: Health,
+    pub health: Health,
     executor: ThreadPoolExecutor,
 }
 
@@ -33,6 +33,10 @@ impl HealthService {
             health:Health::new(comp,desc,ver,app_s),
             executor: ThreadPoolExecutor::new(1).unwrap(),
         }
+    }
+
+    pub fn set_state(&mut self,new_state:AppState){
+         self.health.set_state(new_state);
     }
 
     pub fn get_health(&self) -> Health {
@@ -115,19 +119,6 @@ impl Health {
     pub fn set_state(&mut self,new_state:AppState) {
         self.app_state = new_state;
     }
-
-    // pub fn get_health(&self) -> Health {
-    //     Health {
-    //         is_available: self.clone().compute_availability(),
-    //         component:self.component.to_owned(),
-    //         component_description:self.component_description.to_owned(),
-    //         version:self.version.to_owned(),
-    //         service_started:self.service_started.to_owned(),
-    //         app_state:self.app_state.to_owned(),
-    //         stats:self.stats.to_owned(),
-    //         dependencies:self.dependencies.to_owned(),
-    //     }
-    // }
 }
 
 #[derive(Debug,Serialize,Deserialize,Clone)]

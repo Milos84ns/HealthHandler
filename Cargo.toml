@@ -1,6 +1,6 @@
 [package]
 name = "health-handler"
-version = "0.1.5"
+version = "0.1.7"
 edition = "2021"
 description = "Health handler for microservices"
 
